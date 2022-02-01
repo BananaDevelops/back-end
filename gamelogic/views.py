@@ -1,7 +1,5 @@
-from http.client import ResponseNotReady
-from json import JSONDecoder
 from django.shortcuts import render
-from django.http import HttpRequest, JsonResponse, HttpResponse
+from django.http import JsonResponse
 import json
 
 def test_map(request):
