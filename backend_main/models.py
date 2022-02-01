@@ -21,7 +21,7 @@ class Monster(models.Model):
     name = models.CharField(max_length=64)
     health = models.IntegerField(default=50)
     damage = models.IntegerField(default=10)
-    image = models.ImageField()
+    # image = models.ImageField()
     
     def __str__(self):
         return self.name
