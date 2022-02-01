@@ -2,8 +2,8 @@ from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
 )
-from .models import Player, Monster, Weapon, Item, Map
-from .serializers import PlayerSerializer, MonsterSerializer, WeaponSerializer, ItemSerializer, MapSerializer
+from .models import Player, Monster, Weapon, Item, Map, Prompt
+from .serializers import PlayerSerializer, MonsterSerializer, WeaponSerializer, ItemSerializer, MapSerializer, PromptSerializer
 
 # Player
 class PlayerList(ListCreateAPIView):
@@ -49,3 +49,12 @@ class MapList(ListCreateAPIView):
 class MapDetail(RetrieveUpdateDestroyAPIView):
     queryset = Map.objects.all()
     serializer_class = MapSerializer
+
+# Prompt
+class PromptList(ListCreateAPIView):
+    queryset = Prompt.objects.all()
+    serializer_class = PromptSerializer
+
+class PromptDetail(RetrieveUpdateDestroyAPIView):
+    queryset = Prompt.objects.all()
+    serializer_class = PromptSerializer

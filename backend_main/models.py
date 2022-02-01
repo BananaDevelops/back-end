@@ -21,7 +21,8 @@ class Monster(models.Model):
     name = models.CharField(max_length=64)
     health = models.IntegerField(default=50)
     damage = models.IntegerField(default=10)
-
+    image = models.ImageField()
+    
     def __str__(self):
         return self.name
 
@@ -40,9 +41,17 @@ class Item(models.Model):
     def __str__(self):
         return self.name
 
+# TODO map model
 class Map(models.Model):
     name = models.CharField(max_length=64)
     layout = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return self.name
+
+# TODO prompt model
+class Prompt(models.Model):
+    text = models.TextField(max_length=256)
+
+    def __str__(self):
+        return self.text

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Player, Monster, Weapon, Item, Map
+from .models import Player, Monster, Weapon, Item, Map, Prompt
 
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,4 +24,9 @@ class ItemSerializer(serializers.ModelSerializer):
 class MapSerializer(serializers.ModelSerializer):
     class Meta:
         model = Map
+        fields = "__all__"
+
+class PromptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Prompt
         fields = "__all__"
