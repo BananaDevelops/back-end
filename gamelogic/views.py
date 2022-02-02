@@ -1,3 +1,4 @@
+from http.client import ResponseNotReady
 from django.shortcuts import render
 from django.http import JsonResponse, HttpRequest, HttpResponse
 import json
@@ -13,12 +14,24 @@ def map_build(request):
     outer_box[3][0] = 1
     outer_box[3][1] = 2
     outer_box[3][2] = 3
-    response = {"Data": outer_box}
+    outer_box_b = [
+        [0,0,0,0,0,0,2,0,0],
+        [0,1,1,1,1,1,1,1,0],
+        [0,1,1,1,0,0,1,1,0],
+        [0,1,1,1,0,0,3,1,0],
+        [0,1,1,1,1,1,1,1,0],
+        [0,1,1,0,0,0,1,1,0],
+        [0,1,3,1,1,0,1,1,0],
+        [0,1,1,1,1,0,1,1,0],
+        [0,0,1,0,0,0,0,0,0],]
+    response = {"Data": outer_box_b}
     return JsonResponse(response, safe="False")
 
 
 
 # Player Movement
+
+# TODO reset out of bounds Index Error to cannot walk there for all movements
 
 def player_move_up(current_map):
     player_location = []
@@ -129,19 +142,20 @@ def player_move_right(current_map):
         return current_map
     return current_map
 
-def player_movement(message,current_map):
+def player_movement(response):
     
     # response = json.loads(request.body)
     # command = response['message']
     # command.lower()
-    if message == 'move up':
-        return player_move_up(current_map)
-    elif message == 'move down':
-        return player_move_down(current_map)
-    elif message == 'move left':
-        return player_move_left(current_map)
-    elif message == 'move right':
-        return player_move_right(current_map)
+    if response['message'] == 'move up':
+        return player_move_up(response['map'])
+        
+    elif response['message'] == 'move down':
+        return player_move_down(response['map'])
+    elif response['message'] == 'move left':
+        return player_move_left(response['map'])
+    elif response['message'] == 'move right':
+        return player_move_right(response['map'])
 
 
 # Monster Encounter
@@ -186,25 +200,24 @@ def command_validator(message):
     return False
 
 
-def run_game(message):
-    world_intro()
-    new_game = True
+def run_game(response):
+    if 'move' in response['message']:
+        response['map'] = player_movement(response)
+    if 'equip' in response['message']:    
+        player_equip(response)
+    return response
     
-    while new_game:
-        if 'move' in message:
-            return player_movement(message)
-        if 'equip' in message:    
-            player_equip(message)
-        if 'quit' in message:
-            break
-        
+                
 @csrf_exempt
 def game_logic(request):
     response = json.loads(request.body)
-    message = response['message']
-    valid = command_validator(message)
+
+    world_intro()
+
+    valid = command_validator(response['message'])
+    
     if valid:
-        run_game(message)    
+        response = run_game(response)    
     else:
         return JsonResponse('please use valid command!!!!', safe="False")
-    return JsonResponse(message, safe="False")
+    return JsonResponse(response, safe="False")
