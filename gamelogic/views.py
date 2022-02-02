@@ -5,7 +5,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.apps import apps
 Monster = apps.get_model('backend_main', 'Monster')
 Player = apps.get_model('backend_main', 'Player')
-# from backend_main.models import Monster
 
 
 def map_build(request):
@@ -37,7 +36,8 @@ def map_build(request):
 
 # TODO reset out of bounds Index Error to cannot walk there for all movements
 
-def player_move_up(current_map):
+def player_move_up(response):
+    current_map = response['map']
     player_location = []
     iteration = -1
     for idx in current_map:
@@ -58,14 +58,16 @@ def player_move_up(current_map):
         return current_map
     elif current_map[player_location[0] -1][player_location[1]] == 3:
         print('monster encounter')
-        # current_map[player_location[0] -1][player_location[1]] = 2
-        # current_map[player_location[0]][player_location[1]] = 1
-        monster_encounter()
-        return current_map
+        encounter_success = monster_encounter(response['player'])
+        if encounter_success:
+            current_map[player_location[0] -1][player_location[1]] = 2
+            current_map[player_location[0]][player_location[1]] = 1
+            return current_map
     return current_map
     
 
-def player_move_down(current_map):
+def player_move_down(response):
+    current_map = response['map']
     player_location = []
     iteration = -1
     for idx in current_map:
@@ -86,14 +88,17 @@ def player_move_down(current_map):
         return current_map
     elif current_map[player_location[0] + 1][player_location[1]] == 3:
         print('monster encounter')
-        # print(Monster.objects.all)
-        monster_encounter()
-        # current_map[player_location[0] -1][player_location[1]] = 2
-        # current_map[player_location[0]][player_location[1]] = 1
+        encounter_success = monster_encounter(response['player'])
+        if encounter_success:
+            current_map[player_location[0] +1][player_location[1]] = 2
+            current_map[player_location[0]][player_location[1]] = 1
+            return current_map
+        print('monster encounter complete')
         return current_map
     return current_map
 
-def player_move_left(current_map):
+def player_move_left(response):
+    current_map = response['map']
     player_location = []
     iteration = -1
     for idx in current_map:
@@ -114,13 +119,17 @@ def player_move_left(current_map):
         return current_map
     elif current_map[player_location[0]][player_location[1]-1] == 3:
         print('monster encounter')
-        # current_map[player_location[0]][player_location[1]-1] = 2
-        # current_map[player_location[0]][player_location[1]] = 1
-        monster_encounter()
+        encounter_success = monster_encounter(response['player'])
+        if encounter_success:
+            current_map[player_location[0]][player_location[1]-1] = 2
+            current_map[player_location[0]][player_location[1]] = 1
+            return current_map
+        print('monster encounter complete')
         return current_map
     return current_map
 
-def player_move_right(current_map):
+def player_move_right(response):
+    current_map = response['map']
     player_location = []
     iteration = -1
     for idx in current_map:
@@ -141,10 +150,11 @@ def player_move_right(current_map):
         return current_map
     elif current_map[player_location[0]][player_location[1]+1] == 3:
         print('monster encounter')
-        # current_map[player_location[0]][player_location[1]+1] = 2
-        # current_map[player_location[0]][player_location[1]] = 1
-        monster_encounter()
-        return current_map
+        encounter_success = monster_encounter(response['player'])
+        if encounter_success:
+            current_map[player_location[0]][player_location[1]+1] = 2
+            current_map[player_location[0]][player_location[1]] = 1
+            return current_map
     return current_map
 
 def player_movement(response):
@@ -153,39 +163,46 @@ def player_movement(response):
     # command = response['message']
     # command.lower()
     if response['message'] == 'move up':
-        return player_move_up(response['map'])
+        return player_move_up(response)
         
     elif response['message'] == 'move down':
-        return player_move_down(response['map'])
+        return player_move_down(response)
     elif response['message'] == 'move left':
-        return player_move_left(response['map'])
+        return player_move_left(response)
     elif response['message'] == 'move right':
-        return player_move_right(response['map'])
+        return player_move_right(response)
 
 
 # Monster Encounter
 
 def player_attack(monster_health, player):
-    damage = monster_health - player.damage
-    return damage
+    # TODO add player weapon to player damage Ex.(player.damage + player.weapon.damage)
+    monster_health -= player.damage + 20
+    return monster_health
 
 def monster_attack(player_health, monster):
-    damage = player_health - monster.damage
-    return damage
+    player_health -= monster.damage
+    return player_health
 
-def monster_encounter():
+def monster_encounter(player):
+    print('monster encounter initial')
     monster = Monster.objects.get()
-    player = Player.objects.get()
+    current_player = Player.objects.get(name=player['name'])
 
     monster_health = monster.health
-    player_health = player.health
+    player_health = current_player.health
 
-    while monster_health >0 or player_health >0:
-        monster_health = player_attack(monster_health, player)
-        player_damage = monster_attack(player_health, monster)
-        print('monster_encounter', monster_damage, player_damage)
-        break
-    return True
+    while monster_health >0 and player_health >0:
+        monster_health = player_attack(monster_health, current_player)
+        player_health = monster_attack(player_health, monster)
+        print('monster_encounter', monster_health, player_health)
+
+    if player_health <= 0:
+        print("player is dead")
+        return False
+    if monster_health <= 0:
+        print('monster dead')
+        return True
     
 
 def player_use_item(request):
