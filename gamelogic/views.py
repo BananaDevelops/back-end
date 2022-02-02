@@ -1,8 +1,12 @@
-from http.client import ResponseNotReady
-from django.shortcuts import render
-from django.http import JsonResponse, HttpRequest, HttpResponse
+from os import name
+from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
+from django.apps import apps
+Monster = apps.get_model('backend_main', 'Monster')
+Player = apps.get_model('backend_main', 'Player')
+# from backend_main.models import Monster
+
 
 def map_build(request):
     outer_box = []
@@ -54,8 +58,8 @@ def player_move_up(current_map):
         return current_map
     elif current_map[player_location[0] -1][player_location[1]] == 3:
         print('monster encounter')
-        current_map[player_location[0] -1][player_location[1]] = 2
-        current_map[player_location[0]][player_location[1]] = 1
+        # current_map[player_location[0] -1][player_location[1]] = 2
+        # current_map[player_location[0]][player_location[1]] = 1
         monster_encounter()
         return current_map
     return current_map
@@ -82,9 +86,10 @@ def player_move_down(current_map):
         return current_map
     elif current_map[player_location[0] + 1][player_location[1]] == 3:
         print('monster encounter')
-        current_map[player_location[0] -1][player_location[1]] = 2
-        current_map[player_location[0]][player_location[1]] = 1
+        # print(Monster.objects.all)
         monster_encounter()
+        # current_map[player_location[0] -1][player_location[1]] = 2
+        # current_map[player_location[0]][player_location[1]] = 1
         return current_map
     return current_map
 
@@ -109,8 +114,8 @@ def player_move_left(current_map):
         return current_map
     elif current_map[player_location[0]][player_location[1]-1] == 3:
         print('monster encounter')
-        current_map[player_location[0]][player_location[1]-1] = 2
-        current_map[player_location[0]][player_location[1]] = 1
+        # current_map[player_location[0]][player_location[1]-1] = 2
+        # current_map[player_location[0]][player_location[1]] = 1
         monster_encounter()
         return current_map
     return current_map
@@ -136,8 +141,8 @@ def player_move_right(current_map):
         return current_map
     elif current_map[player_location[0]][player_location[1]+1] == 3:
         print('monster encounter')
-        current_map[player_location[0]][player_location[1]+1] = 2
-        current_map[player_location[0]][player_location[1]] = 1
+        # current_map[player_location[0]][player_location[1]+1] = 2
+        # current_map[player_location[0]][player_location[1]] = 1
         monster_encounter()
         return current_map
     return current_map
@@ -160,14 +165,28 @@ def player_movement(response):
 
 # Monster Encounter
 
-def player_attack(request):
-    pass
+def player_attack(monster_health, player):
+    damage = monster_health - player.damage
+    return damage
 
-def monster_attack(reqeust):
-    pass
+def monster_attack(player_health, monster):
+    damage = player_health - monster.damage
+    return damage
 
 def monster_encounter():
-    pass
+    monster = Monster.objects.get()
+    player = Player.objects.get()
+
+    monster_health = monster.health
+    player_health = player.health
+
+    while monster_health >0 or player_health >0:
+        monster_health = player_attack(monster_health, player)
+        player_damage = monster_attack(player_health, monster)
+        print('monster_encounter', monster_damage, player_damage)
+        break
+    return True
+    
 
 def player_use_item(request):
     pass
