@@ -1,5 +1,6 @@
 from email.policy import default
 from os import name
+import black
 from django.db import models
 
 # Create your models here.
@@ -9,9 +10,9 @@ class Player(models.Model):
     name = models.CharField(max_length=64)
     health = models.IntegerField(default=100)
     damage = models.IntegerField(default=1)
-    inventory = []
-    left_hand = ""
-    right_hand = ""
+    inventory = models.JSONField(default=list, blank=True)
+    left_hand = models.JSONField(default=dict, blank=True)
+    right_hand = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return self.name

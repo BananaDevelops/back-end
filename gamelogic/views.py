@@ -219,5 +219,6 @@ def game_logic(request):
     if valid:
         response = run_game(response)    
     else:
-        return JsonResponse('please use valid command!!!!', safe="False")
+        response['message'] = 'please use valid command!!!!'
+        return JsonResponse(response, safe="False")
     return JsonResponse(response, safe="False")
