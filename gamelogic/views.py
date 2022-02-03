@@ -2,9 +2,9 @@ from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.apps import apps
-# Monster = apps.get_model('backend_main', 'Monster')
-# Player = apps.get_model('backend_main', 'Player')
-# Weapon = apps.get_model('backend_main', 'Weapon')
+Monster = apps.get_model('backend_main', 'Monster')
+Player = apps.get_model('backend_main', 'Player')
+Weapon = apps.get_model('backend_main', 'Weapon')
 
 
 def map_build(request):
