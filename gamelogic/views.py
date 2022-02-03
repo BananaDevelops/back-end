@@ -115,7 +115,10 @@ def player_movement(response):
 def player_attack(monster, player):
     # TODO add player weapon to player damage Ex.(player.damage + player.weapon.damage)
     monster_health = monster.health
-    monster_health -= player['damage'] + player['left_hand']['damage']
+    if player['left_hand']['damage']:
+        monster_health -= player['damage'] + player['left_hand']['damage']
+    else:
+        monster_health -= player['damage']
     monster.health = monster_health
     return monster
 
