@@ -1,6 +1,3 @@
-from email.policy import default
-from os import name
-import black
 from django.db import models
 
 # Create your models here.
@@ -13,6 +10,8 @@ class Player(models.Model):
     inventory = models.JSONField(default=list, blank=True)
     left_hand = models.JSONField(default=dict, blank=True)
     right_hand = models.JSONField(default=dict, blank=True)
+    combat = models.BooleanField(default=False)
+    end_game = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
