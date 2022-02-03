@@ -6,7 +6,6 @@ Monster = apps.get_model('backend_main', 'Monster')
 Player = apps.get_model('backend_main', 'Player')
 Weapon = apps.get_model('backend_main', 'Weapon')
 
-
 def map_build(request):
     print('inside map')
     outer_box = []
@@ -32,175 +31,62 @@ def map_build(request):
     response = {"Data": outer_box_b}
     return JsonResponse(response, safe="False")
 
-# Player Movement
-
-# TODO reset out of bounds Index Error to cannot walk there for all movements
-
-def player_move_up(response):
-    current_map = response['map']
+def player_location_finder(map):
     player_location = []
-    iteration = -1
-    for idx in current_map:
-        iteration = iteration + 1
-        for sub_idx in idx:
-            
+    for index,idx in enumerate(map):
+        for index_b,sub_idx in enumerate(idx): 
             if sub_idx == 2:
-                player_location.append(iteration)
-                player_location.append(idx.index(2))
-    response['prompt'] = 'Moved Up'
-    
-    if current_map[player_location[0] - 1][player_location[1]] == 1:
-        print('proceed')
-        current_map[player_location[0] - 1][player_location[1]] = 2
+                player_location.append(index)
+                player_location.append(index_b)
+    return player_location
+
+def player_move(response, direction):
+    current_map = response['map']
+    player_location = player_location_finder(current_map)
+
+    direction_addants = []
+    if direction == "up":
+        direction_addants.extend([-1,0])
+    if direction == "down":
+        direction_addants.extend([1,0])
+    if direction == "left":
+        direction_addants.extend([0,-1])
+    if direction == "right":
+        direction_addants.extend([0,1])
+
+    future_y=player_location[0] + direction_addants[0]
+    future_x=player_location[1] + direction_addants[1]
+    future_position_value = current_map[future_y][future_x]
+
+
+    # If the player moved into a wall
+    if future_position_value == 0:
+        response['prompt']='cannot walk this way'
+        response['map'] = current_map
+        return response
+
+    # If the player moved toward an open space
+    elif future_position_value == 1:
+        response['prompt'] = f'Moved {direction}'
+        current_map[future_y][future_x] = 2
         current_map[player_location[0]][player_location[1]] = 1
         response['map'] = current_map
         return response
-    elif current_map[player_location[0] - 1][player_location[1]] == 0:
-        print('cannot walk this way')
-        response['map'] = current_map
-        return response
-    elif current_map[player_location[0] - 1][player_location[1]] == 3:
-        print('monster encounter')
-        encounter_success = monster_encounter_initial(response)
-        if encounter_success:
-            current_map[player_location[0] -1][player_location[1]] = 2
-            current_map[player_location[0]][player_location[1]] = 1
-            response['map'] = current_map
-            return response
-    elif current_map[player_location[0] - 1][player_location[1]] == 4:
-        response['prompt'] = 'YOU HAVE FOUND A WEAPON'
-        response['player']['inventory'] = pick_up(response)
-        response['map'] = current_map
-        return response
-    response['map'] = current_map
-    return response
-    
-def player_move_down(response):
-    current_map = response['map']
-    player_location = []
-    iteration = -1
-    for idx in current_map:
-        iteration = iteration + 1
-        for sub_idx in idx:
-            
-            if sub_idx == 2:
-                player_location.append(iteration)
-                player_location.append(idx.index(2))
-    response['prompt'] = 'Moved Down'
-    
-    if current_map[player_location[0] + 1][player_location[1]] == 1:
-        print('proceed')
-        current_map[player_location[0] +1][player_location[1]] = 2
-        current_map[player_location[0]][player_location[1]] = 1
-        print(response['prompt'])
-        response['map'] = current_map
-        return response
-    elif current_map[player_location[0] +1][player_location[1]] == 0:
-        print('cannot walk this way')
-        response['map'] = current_map
-        return response
-    elif current_map[player_location[0] + 1][player_location[1]] == 3:
-        print('monster encounter')
-        encounter_success = monster_encounter_initial(response)
-        if encounter_success:
-            current_map[player_location[0] +1][player_location[1]] = 2
-            current_map[player_location[0]][player_location[1]] = 1
-            response['map'] = current_map
-            return response
-        print('monster encounter complete')
-        response['map'] = current_map
-        return response
-    elif current_map[player_location[0] + 1][player_location[1]] == 4:
-        response['prompt'] = 'YOU HAVE FOUND A WEAPON'
-        response['player']['inventory'] = pick_up(response)
-        response['map'] = current_map
-        return response
-    response['map'] = current_map
-    return response
 
-def player_move_left(response):
-    current_map = response['map']
-    player_location = []
-    iteration = -1
-    for idx in current_map:
-        iteration = iteration + 1
-        for sub_idx in idx:
-            
-            if sub_idx == 2:
-                player_location.append(iteration)
-                player_location.append(idx.index(2))
-
-    response['prompt'] = 'Moved Left'
-
-    if current_map[player_location[0]][player_location[1]-1] == 1:
-        print('proceed')
-        current_map[player_location[0]][player_location[1]-1] = 2
+    # If the player moved into a monster
+    elif future_position_value == 3:
+        response['prompt'] = 'monster encounter'
+        response = monster_encounter_initial(response)
+        current_map[future_y][future_x] = 2
         current_map[player_location[0]][player_location[1]] = 1
         response['map'] = current_map
         return response
-    elif current_map[player_location[0]][player_location[1]-1] == 0:
-        print('cannot walk this way')
-        response['map'] = current_map
-        return response
-    elif current_map[player_location[0]][player_location[1]-1] == 3:
-        print('monster encounter')
-        encounter_success = monster_encounter_initial(response)
-        if encounter_success:
-            current_map[player_location[0]][player_location[1]-1] = 2
-            current_map[player_location[0]][player_location[1]] = 1
-            response['map'] = current_map
-            return response
-        print('monster encounter complete')
-        response['map'] = current_map
-        return response
-    elif current_map[player_location[0]][player_location[1]-1] == 4:
+
+    # If the player moved into an item space
+    elif future_position_value == 4:
         response['prompt'] = 'YOU HAVE FOUND A WEAPON'
-        response['player']['inventory'] = pick_up(response)
-        response['map'] = current_map
-        return response
-
-    response['map'] = current_map
-    return response
-
-def player_move_right(response):
-    current_map = response['map']
-    player_location = []
-    iteration = -1
-    for idx in current_map:
-        iteration = iteration + 1
-        for sub_idx in idx:
-            
-            if sub_idx == 2:
-                player_location.append(iteration)
-                player_location.append(idx.index(2))
-    
-    response['prompt'] = 'Moved Right'
-
-    if current_map[player_location[0]][player_location[1]+1] == 1:
-        print('proceed')
-        current_map[player_location[0]][player_location[1]+1] = 2
-        current_map[player_location[0]][player_location[1]] = 1
-        response['map'] = current_map
-        return response
-    elif current_map[player_location[0]][player_location[1]+1] == 0:
-        print('cannot walk this way')
-        response['map'] = current_map
-        return response
-    elif current_map[player_location[0]][player_location[1]+1] == 3:
-        print('monster encounter')
-        encounter_success = monster_encounter_initial(response)
-        if encounter_success:
-            current_map[player_location[0]][player_location[1]+1] = 2
-            current_map[player_location[0]][player_location[1]] = 1
-            response['map'] = current_map
-            return response
-    elif current_map[player_location[0]][player_location[1]+1] == 4:
-        response['prompt'] = 'YOU HAVE FOUND A WEAPON'
-        # weapon = Weapon.objects.get()
-        # response['player']['inventory'].append(weapon)
-        # print(response['player']['inventory'])
-        # pick_up(response)
-        current_map[player_location[0]][player_location[1]+1] = 2
+        response['player']['inventory'] = pick_up(response['player']['inventory'])
+        current_map[future_y][future_x] = 2
         current_map[player_location[0]][player_location[1]] = 1
         response['map'] = current_map
         return response
@@ -209,16 +95,19 @@ def player_move_right(response):
 
 def player_movement(response):
     if response['message'] == 'move up':
-        response = player_move_up(response)
+        response = player_move(response, "up")
         return response
+
     if response['message'] == 'move down':
-        response = player_move_down (response)
+        response = player_move(response, "down")
         return response
+
     if response['message'] == 'move left':
-        response = player_move_left (response)
+        response = player_move(response, "left")
         return response
+
     if response['message'] == 'move right':
-        response = player_move_right (response)
+        response = player_move(response, "right")
         return response
 
 # Monster Encounter
@@ -241,10 +130,6 @@ def monster_encounter_initial(response):
     response['player']['combat'] = True
     print(response)
     return response
-
-# def run_true():
-#     return True
-
 
 def monster_encounter(response):
     print('monster encounter initial')
@@ -284,42 +169,48 @@ def monster_encounter(response):
         print('monster dead')
         return response
     return response
-    
-
-def player_use_item(request):
-    pass
-
 
 # World actions
-
-def pick_up(response):
-    weapon = Weapon.objects.get()
+    
+def pick_up(inventory):
+    # THIS IS COMMENTED OUT FOR TESTING
+    # weapon = Weapon.objects.get()
+    weapon = {"type":"sword", "damage":20}
     print(weapon)
-    # inventory = response['player']['inventory']
-    # inventory.append(weapon)
-    response['player']['inventory'] = [weapon]
-    print('pickin up somethin')
-    return response['player']['inventory']
-    
-    
+    inventory.append(weapon)
+    # response['player']['inventory'] = [weapon]
+    # print('pickin up somethin')
+    return inventory   
 
-def player_use_item(request):
-    pass
+def player_equip(response):
+    if "weapon" in response['message']:
+        response = player_equip_weapon(response)
+        return response
+    if "item" in response['message']:
+        response = "item"
+        return response
 
-
-def player_equip():
-    pass
-
-def player_equip_weapon(request):
-    pass
-
-def player_equip_item(request):
-    pass
-
+def player_equip_weapon(response):
+    if len(response['player']['inventory']) > 0:
+        search_term = ''
+        if "sword" in response['message']:
+            search_term = 'sword'
+        if "left" in response['message']:
+            for index,weapon in enumerate(response['player']['inventory']):
+                item_removed_inventory = []
+                if weapon['type'] == search_term:
+                    response['player']['left_hand']= weapon
+                    response['prompt'] = f'You equipped a {search_term}'
+                else:
+                    item_removed_inventory.append(weapon)
+                response['player']['inventory']= item_removed_inventory 
+                return response
+        if "right" in response['message']:
+            return "No rightey"
+    return "no weapon"
 
 def world_intro():
     return 'this is how you play the game'
-
 
 def command_validator(message,combat=False):
     command_list = ['quit','move left','move right','move up', 'move down','attack',]
@@ -333,7 +224,6 @@ def command_validator(message,combat=False):
         return True
     
     return False
-
 
 def run_game(response):
     if 'move' in response['message']:
