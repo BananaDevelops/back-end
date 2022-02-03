@@ -20,8 +20,8 @@ def map_build(request):
     outer_box[3][2] = 3 # monster
     outer_box_b = [
         [0,0,0,0,0,0,2,0,0],
-        [0,1,1,1,1,1,1,4,0],
-        [0,1,1,1,0,0,1,1,0],
+        [0,1,1,1,1,1,1,1,0],
+        [0,1,1,1,0,0,1,4,0],
         [0,1,1,1,0,0,3,1,0],
         [0,1,1,1,1,1,1,1,0],
         [0,1,1,0,0,0,1,1,0],
@@ -43,6 +43,11 @@ def player_location_finder(map):
 def player_move(response, direction):
     current_map = response['map']
     player_location = player_location_finder(current_map)
+
+    if player_location == [8,2]:
+        response['player']['end_game'] = True
+        response['prompt'] = "You win"
+        return response
 
     direction_addants = []
     if direction == "up":
@@ -115,10 +120,10 @@ def player_movement(response):
 def player_attack(monster, player):
     # TODO add player weapon to player damage Ex.(player.damage + player.weapon.damage)
     monster_health = monster.health
-    if player['left_hand']['damage']:
-        monster_health -= player['damage'] + player['left_hand']['damage']
-    else:
-        monster_health -= player['damage']
+    if player['left_hand']:
+        monster_health -= player['left_hand']['damage']
+
+    monster_health -= player['damage']
     monster.health = monster_health
     return monster
 
@@ -166,6 +171,7 @@ def monster_encounter(response):
         print("player is dead")
         response['player']['combat'] = False
         response['prompt'] = "You are dead! GAME OVER!"
+        response['player']['end_game'] = True
         return response
     if monster.health <= 0:
         response['player']['combat'] = False
@@ -256,8 +262,11 @@ def game_logic(request):
     world_intro()
 
     valid = command_validator(response['message'],response['player']['combat'])
-
     if valid:
+        if response['player']['end_game']:
+            response['prompt'] = "Thanks for playing. Reload Page"
+            return JsonResponse(response, safe="False")
+
         if response['player']['combat']:
             print('attack phase')
     
