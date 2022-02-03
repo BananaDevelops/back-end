@@ -115,7 +115,7 @@ def player_movement(response):
 def player_attack(monster, player):
     # TODO add player weapon to player damage Ex.(player.damage + player.weapon.damage)
     monster_health = monster.health
-    monster_health -= player['damage']
+    monster_health -= player['damage'] + player['left_hand']['damage']
     monster.health = monster_health
     return monster
 
@@ -157,7 +157,7 @@ def monster_encounter(response):
         player_health = response['player']['health']
     print('monster_encounter', monster.health, player_health)
 
-    response['prompt'] = 'Attack round complete.'
+    response['prompt'] = f'Attack round complete. Monster Health: {monster.health}'
 
     if player_health <= 0:
         print("player is dead")
@@ -167,6 +167,7 @@ def monster_encounter(response):
     if monster.health <= 0:
         response['player']['combat'] = False
         print('monster dead')
+        response['prompt'] = "Monster is dead"
         return response
     return response
 
@@ -213,7 +214,7 @@ def world_intro():
     return 'this is how you play the game'
 
 def command_validator(message,combat=False):
-    command_list = ['quit','move left','move right','move up', 'move down','attack',]
+    command_list = ['quit','move left','move right','move up', 'move down','attack', 'equip weapon sword left']
     attack_list = ['attack','use item']
     if message in command_list:
         if combat:
