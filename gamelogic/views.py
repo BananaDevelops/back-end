@@ -1,3 +1,4 @@
+from random import random
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
@@ -6,29 +7,49 @@ Monster = apps.get_model('backend_main', 'Monster')
 Player = apps.get_model('backend_main', 'Player')
 Weapon = apps.get_model('backend_main', 'Weapon')
 
+outer_box_b = [
+    [0,0,0,0,0,0,2,0,0],
+    [0,1,1,1,1,1,1,4,0],
+    [0,1,1,1,0,0,1,4,0],
+    [0,1,1,1,0,0,3,1,0],
+    [0,1,1,1,1,1,1,1,0],
+    [0,1,1,0,0,0,1,1,0],
+    [0,1,3,1,1,0,1,1,0],
+    [0,1,1,1,1,0,1,1,0],
+    [0,0,1,0,0,0,0,0,0],]
+outer_box_c = [
+    [0,0,0,0,0,0,2,0,0],
+    [0,4,1,1,1,1,1,1,0],
+    [0,1,1,1,0,0,1,1,0],
+    [0,1,3,1,0,0,4,1,0],
+    [0,1,1,1,1,1,1,1,0],
+    [0,1,1,0,0,0,0,1,0],
+    [0,1,3,1,1,0,1,1,0],
+    [0,1,1,1,0,4,1,1,0],
+    [0,0,1,0,0,0,0,0,0],]
+outer_box_d = [
+    [0,2,0,0,0,0,0,0,0],
+    [0,1,1,1,1,1,4,1,0],
+    [0,0,0,0,0,0,0,1,0],
+    [0,0,0,0,4,1,0,1,0],
+    [0,1,1,1,3,1,0,1,0],
+    [0,1,1,1,0,1,0,1,0],
+    [0,1,3,1,0,1,0,1,0],
+    [0,1,1,1,0,1,1,3,0],
+    [0,0,1,0,0,0,0,0,0],]
+map_collection = [outer_box_b, outer_box_c, outer_box_d]
+
+incrementor = 0
+
 def map_build(request):
+    global incrementor
     print('inside map')
-    outer_box = []
-    for _ in range(9):
-        inner_box = []
-        for _ in range(9):
-            inner_box.append(0)
-        outer_box.append(inner_box)
-    outer_box[3][0] = 0 # wall
-    outer_box[3][0] = 1 # empty space
-    outer_box[3][1] = 2 # player
-    outer_box[3][2] = 3 # monster
-    outer_box_b = [
-        [0,0,0,0,0,0,2,0,0],
-        [0,1,1,1,1,1,1,1,0],
-        [0,1,1,1,0,0,1,4,0],
-        [0,1,1,1,0,0,3,1,0],
-        [0,1,1,1,1,1,1,1,0],
-        [0,1,1,0,0,0,1,1,0],
-        [0,1,3,1,1,0,1,1,0],
-        [0,1,1,1,1,0,1,1,0],
-        [0,0,1,0,0,0,0,0,0],]
-    response = {"Data": outer_box_b}
+    map_select = []
+    map_select = map_collection[incrementor]
+    incrementor += 1
+    if incrementor > len(map_collection)-1:
+        incrementor = 0
+    response = {"Data": map_select}
     return JsonResponse(response, safe="False")
 
 def player_location_finder(map):
@@ -118,10 +139,11 @@ def player_movement(response):
 # Monster Encounter
 
 def player_attack(monster, player):
-    # TODO add player weapon to player damage Ex.(player.damage + player.weapon.damage)
     monster_health = monster.health
     if player['left_hand']:
         monster_health -= player['left_hand']['damage']
+    if player['right_hand']:
+        monster_health -= player['right_hand']['damage']
 
     monster_health -= player['damage']
     monster.health = monster_health
@@ -146,15 +168,6 @@ def monster_encounter(response):
     # current_player = Player.objects.get(name=response['player']['name'])
     current_player = response['player']
     player_health = current_player['health']
-
-    # if response['message'] == 'run':
-    #     response['player']['combat'] = False
-    #     response['prompt'] = 'You ran away!!'
-    #     # location function
-    #     # set current map location to value 3
-    #     # run_true()
-    #     player_move_up(response)
-
     
     if response['message'] == 'attack':
         monster = player_attack(monster, current_player)
@@ -177,23 +190,21 @@ def monster_encounter(response):
         response['player']['combat'] = False
         print('monster dead')
         response['prompt'] = "Monster is dead"
+        monster.health = 50
+        monster.save()
         return response
     return response
 
 # World actions
     
 def pick_up(inventory):
-    # THIS IS COMMENTED OUT FOR TESTING
-    # weapon = Weapon.objects.get()
     weapon = {"type":"sword", "damage":20}
     print(weapon)
     inventory.append(weapon)
-    # response['player']['inventory'] = [weapon]
-    # print('pickin up somethin')
     return inventory   
 
 def player_equip(response):
-    if "weapon" in response['message']:
+    if "sword" in response['message']:
         response = player_equip_weapon(response)
         return response
     if "item" in response['message']:
@@ -203,28 +214,34 @@ def player_equip(response):
 def player_equip_weapon(response):
     if len(response['player']['inventory']) > 0:
         search_term = ''
+        hand_choice = ''
+        remove_one = False
         if "sword" in response['message']:
             search_term = 'sword'
         if "left" in response['message']:
-            for index,weapon in enumerate(response['player']['inventory']):
-                item_removed_inventory = []
-                if weapon['type'] == search_term:
-                    response['player']['left_hand']= weapon
-                    response['prompt'] = f'You equipped a {search_term}'
-                else:
-                    item_removed_inventory.append(weapon)
-                response['player']['inventory']= item_removed_inventory 
-                return response
+            hand_choice = 'left_hand'
         if "right" in response['message']:
-            return "No rightey"
+            hand_choice = 'right_hand'
+        for index,weapon in enumerate(response['player']['inventory']):
+            item_removed_inventory = []
+            if weapon['type'] == search_term:
+                if not remove_one:
+                    response['player'][hand_choice]= weapon
+                    response['prompt'] = f'You equipped a {search_term}'
+                    remove_one = True
+            else:
+                item_removed_inventory.append(weapon)
+            response['player']['inventory']= item_removed_inventory 
+            return response
+
     return "no weapon"
 
 def world_intro():
     return 'this is how you play the game'
 
 def command_validator(message,combat=False):
-    command_list = ['quit','move left','move right','move up', 'move down','attack', 'equip weapon sword left']
-    attack_list = ['attack','use item']
+    command_list = ['quit','move left','move right','move up', 'move down','attack', 'equip sword left', 'equip sword right']
+    attack_list = ['attack','use item', 'equip sword left', 'equip sword right']
     if message in command_list:
         if combat:
             if message in attack_list:
@@ -244,17 +261,8 @@ def run_game(response):
         if response['player']['combat'] == False:
             response['prompt'] = 'Swing and a miss nothing to hit.'
         return response
-    
-    if 'run':
-        pass
-    if 'quit' in response['message']:
-        # response['quit'] = True
-        response['prompt'] = 'Thank you for playing. Come back and see us.'
-        response['player'] = ''
-        return response
     return response
-    
-                
+             
 @csrf_exempt
 def game_logic(request):
     response = json.loads(request.body)
